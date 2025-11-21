@@ -190,5 +190,38 @@ EXCEPTION
         DBMS_OUTPUT.PUT_LINE('Erreur suppression projet : ' || SQLERRM);
 END;
 /
-
+-- ===========================================================
+-- PROCÉDURE : journaliser_action
+-- OBJECTIF   : Insérer une ligne dans LOG_OPERATION pour tracer une action.
+-- PARAMÈTRES :
+--   p_table_concernee VARCHAR2 : Nom de la table concernée
+--   p_operation       VARCHAR2 : Type d'opération (INSERT, UPDATE, DELETE)
+--   p_utilisateur     VARCHAR2 : Nom de l'utilisateur effectuant l'action
+--   p_description     VARCHAR2 : Description détaillée de l'action
+-- EXCEPTIONS :
+--   - Erreur d'insertion dans LOG_OPERATION
+-- ===========================================================
+CREATE OR REPLACE PROCEDURE journaliser_action(
+    p_table_concernee IN VARCHAR2,
+    p_operation       IN VARCHAR2,
+    p_utilisateur     IN VARCHAR2,
+    p_description     IN VARCHAR2
+)
+IS
+    v_id_log NUMBER;
+BEGIN
+    SELECT NVL(MAX(id_log),0) + 1 INTO v_id_log FROM LOG_OPERATION;
+    INSERT INTO LOG_OPERATION(
+        id_log, table_concernee, operation, utilisateur, date_op, description
+    ) VALUES (
+        v_id_log, p_table_concernee, p_operation, p_utilisateur, SYSDATE, p_description
+    );
+    COMMIT;
+    DBMS_OUTPUT.PUT_LINE('Action journalisée : ' || p_operation || ' sur ' || p_table_concernee);
+EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;
+        DBMS_OUTPUT.PUT_LINE('Erreur journalisation : ' || SQLERRM);
+END;
+/
 
