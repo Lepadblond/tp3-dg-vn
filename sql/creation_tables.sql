@@ -49,8 +49,6 @@ GRANT INSERT ANY TABLE TO ROLE_GEST_LAB;
 
 -- LECTEUR
 GRANT CREATE SESSION TO ROLE_LECT_LAB;
-
--- FIN DU DDL
 /
 -- ===========================================================
 -- CRÉATION DES TABLES
