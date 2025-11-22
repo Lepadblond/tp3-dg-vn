@@ -4,7 +4,7 @@
 | Nom          | Numéro d'attestation |
 |--------------|--------------------|
 | David Girard | 2101643            |
-| Vosa Neo     | [Numéro à compléter] |
+| Vosa Neo     | 2245992            |
 
 ## Répartition des tâches
 
