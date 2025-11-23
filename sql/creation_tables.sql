@@ -64,11 +64,11 @@ DECLARE
             DBMS_OUTPUT.PUT_LINE('Erreur lors de la suppression de la table ' || table_name || ' : ' || SQLERRM);
         END IF;
     END;
-BEGIN
+
     -- ==========================
     -- Suppression 
     -- ==========================
-
+BEGIN
     drop_table('ECHANTILLON');
     drop_table('EXPERIENCE');
     drop_table('AFFECTATION_EQUIP');
@@ -76,8 +76,7 @@ BEGIN
     drop_table('PROJET');
     drop_table('CHERCHEUR');
     drop_table('LOG_OPERATION');
-
-  END;
+END;
     -- ==========================
     -- Création des tables
     -- ==========================
