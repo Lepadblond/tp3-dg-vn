@@ -40,10 +40,9 @@ END;
 -- ===========================================================
 -- FONCTION : statistiques_equipements
 -- OBJECTIF  : Retourne le nombre d’équipements par état (disponible, occupé).
--- PARAMETRES :
--- RETOURNE : Retourne un tableau de RECORD.
---   NUMBER : Moyenne des mesures (NULL si aucune mesure)
--- EXCEPTIONS :
+-- PARAMETRES : Aucune
+-- RETOURNE : Retourne un tableau de RECORD. Contenant le nombre d'equipement disponible de chaque etat
+-- EXCEPTIONS : Others? Tables existantes?
 -- ===========================================================
 CREATE OR REPLACE PACKAGE pkg_statistiques AS
 
@@ -125,13 +124,107 @@ CREATE OR REPLACE PACKAGE BODY pkg_statistiques AS
     END statistiques_equipements;
 END pkg_statistiques;
 --Bloc Anonyme d'execution de test de code
-DECLARE
-    v_statistiques pkg_statistiques.t_statistiques_equipements;
-BEGIN
-    v_statistiques := pkg_statistiques.statistiques_equipements();
+-- DECLARE
+--     v_statistiques pkg_statistiques.t_statistiques_equipements;
+-- BEGIN
+--     v_statistiques := pkg_statistiques.statistiques_equipements();
 
-    FOR i IN 1 .. v_statistiques.COUNT LOOP
-        DBMS_OUTPUT.PUT_LINE(v_statistiques(i).etat_equipement || ' = ' || v_statistiques(i).nb_equipement);
+--     FOR i IN 1 .. v_statistiques.COUNT LOOP
+--         DBMS_OUTPUT.PUT_LINE(v_statistiques(i).etat_equipement || ' = ' || v_statistiques(i).nb_equipement);
+--     END LOOP;
+-- END;
+-- /
+-- ===========================================================
+-- PROCÉDURE : rapport_activite_projets()
+-- OBJECTIF   : Affiche le nombre d’expériences réalisées par projet et leur taux de réussite.
+-- EXTERIEUR:
+--   Appelle moyenne_mesures_experience.
+-- EXCEPTIONS :
+--   - Chercheur inexistant
+-- ===========================================================
+CREATE OR REPLACE PROCEDURE rapport_activite_projets
+IS
+    TYPE r_rapport_projet IS RECORD(
+        id_projet NUMBER,
+        nb_experiences NUMBER,
+        taux_accomplit NUMBER,
+        moyenne_mesures NUMBER
+    );
+    TYPE t_rapport_projets IS TABLE OF r_rapport_projet;
+    TYPE t_projet_id IS TABLE OF NUMBER;
+    TYPE t_exp_id IS TABLE OF NUMBER;
+
+    t_rapports t_rapport_projets := t_rapport_projets();
+    t_projets t_projet_id := t_projet_id();
+    t_exps t_exp_id;
+
+
+    v_nb_terminee NUMBER;
+    v_mesure_moyen_somme NUMBER;
+BEGIN
+    --SELECTION DISTINCTE DES PORJETS
+    SELECT DISTINCT id_projet
+    BULK COLLECT INTO t_projets
+    FROM PROJET;
+
+    FOR i IN 1.. t_projets.COUNT LOOP
+        --Incrementation de la table
+        t_rapports.EXTEND();
+
+        --Identifiant projet
+        t_rapports(t_rapports.LAST).id_projet := t_projets(i);
+        
+        --nb d'experiences
+        SELECT COUNT(*)
+        INTO t_rapports(t_rapports.LAST).nb_experiences
+        FROM EXPERIENCE
+        WHERE id_projet = t_projets(i);
+        
+        --taux accomplit
+        SELECT COUNT(*)
+        INTO v_nb_terminee
+        FROM EXPERIENCE
+        WHERE id_projet = t_projets(i) AND statut = 'Terminée';
+        
+        IF t_rapports(t_rapports.LAST).nb_experiences > 0 THEN
+            t_rapports(t_rapports.LAST).taux_accomplit := 100 * (v_nb_terminee / t_rapports(t_rapports.LAST).nb_experiences);
+        ELSE
+            t_rapports(t_rapports.LAST).taux_accomplit := 100 * v_nb_terminee;
+        END IF;
+        
+        --moyenne_mesures
+        t_exps := t_exp_id();
+
+        SELECT DISTINCT id_exp
+        BULK COLLECT INTO t_exps
+        FROM EXPERIENCE
+        WHERE id_projet = t_projets(i);
+        
+        v_mesure_moyen_somme := 0;
+        FOR j IN 1.. t_exps.COUNT LOOP
+            v_mesure_moyen_somme := v_mesure_moyen_somme + NVL(moyenne_mesures_experience(t_exps(j)),0);
+        END LOOP;
+        
+        IF t_exps.COUNT = 0 THEN
+            t_rapports(t_rapports.LAST).moyenne_mesures := v_mesure_moyen_somme;
+        ELSE
+            t_rapports(t_rapports.LAST).moyenne_mesures := v_mesure_moyen_somme / t_exps.COUNT;
+        END IF;
+        
     END LOOP;
-END;
-/
+
+    --Itération de l'information
+    FOR i IN 1.. t_rapports.COUNT LOOP
+        DBMS_OUTPUT.PUT_LINE('ID PROJET: '|| t_rapports(i).id_projet);
+        DBMS_OUTPUT.PUT_LINE('Nombre d''expérience totale :' || t_rapports(i).nb_experiences);
+        DBMS_OUTPUT.PUT_LINE('Taux de complétion des expériences :' || t_rapports(i).taux_accomplit || '%');
+        DBMS_OUTPUT.PUT_LINE('Moyenne des mesures collectées des expériences: ' || t_rapports(i).moyenne_mesures);
+        DBMS_OUTPUT.PUT_LINE('');
+
+    END LOOP;
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Erreur dans statistiques_equipements: '|| SQLERRM);
+END rapport_activite_projets;
+
+EXEC rapport_activite_projets;
