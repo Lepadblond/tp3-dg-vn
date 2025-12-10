@@ -69,7 +69,6 @@ BEGIN
     WHERE id_equipement = :NEW.id_equipement;
 END;
 /
-
 -- ===========================================================
 -- TRIGGER : TRG_AFFECTATION_AFTER_DELETE
 -- OBJECTIF : Libérer l'équipement associé lorsqu'une affectation est supprimée.
@@ -167,7 +166,6 @@ END;
 -- NOTE    : Assure l'audit obligatoire des changements
 --           dans les profils des chercheurs.
 -- ===========================================================
-
 CREATE OR REPLACE TRIGGER TRG_SECURITE_AFTER_UPDATE
 AFTER UPDATE ON CHERCHEUR
 FOR EACH ROW
