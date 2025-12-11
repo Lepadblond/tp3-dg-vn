@@ -226,5 +226,40 @@ EXCEPTION
     WHEN OTHERS THEN
         DBMS_OUTPUT.PUT_LINE('Erreur dans statistiques_equipements: '|| SQLERRM);
 END rapport_activite_projets;
+-- EXEC rapport_activite_projets;
 
-EXEC rapport_activite_projets;
+-- ===========================================================
+-- FONCTION : budget_moyen_par_domaine()
+-- OBJECTIF   : Calcule le budget moyen par domaine scientifique.
+-- RETOURNE: Tableau en mémoire
+-- ===========================================================
+--Objet existant dans shéma
+CREATE OR REPLACE TYPE budget_moyen_obj AS OBJECT (
+    nom_domaine  VARCHAR2(50),
+    budget_moyen NUMBER
+);
+/
+CREATE OR REPLACE TYPE budget_moyen_tab AS TABLE OF budget_moyen_obj;
+/
+-- Fonction princiapel
+CREATE OR REPLACE FUNCTION budget_moyen_par_domaine
+RETURN budget_moyen_tab
+IS
+    CURSOR c_projet IS
+        SELECT domaine AS nom_domaine, AVG(budget) AS budget_moyen FROM PROJET GROUP BY domaine;
+    v_projet c_projet%ROWTYPE;
+    v_table budget_moyen_tab := budget_moyen_tab();
+BEGIN
+    OPEN c_projet;
+    LOOP
+        FETCH c_projet INTO v_projet;
+        EXIT WHEN c_projet%NOTFOUND;
+        v_table.EXTEND;
+        v_table(v_table.LAST) := budget_moyen_obj(v_projet.nom_domaine, v_projet.budget_moyen);
+    END LOOP;
+    CLOSE c_projet;
+    RETURN v_table;
+END;
+/
+--Test Fonction
+SELECT * FROM TABLE(budget_moyen_par_domaine());
