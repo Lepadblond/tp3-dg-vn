@@ -33,5 +33,5 @@
    - Vérifier la sortie avec `DBMS_OUTPUT.PUT_LINE`  
 
 ## Date de remise
-- **Date :** [JJ/MM/AAAA]  
-- **État du projet :** Incomplet
+- **Date :** [12/12/2025]  
+- **État du projet :** Complet
