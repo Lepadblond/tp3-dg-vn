@@ -146,3 +146,25 @@ BEGIN
     COMMIT;
 END;
 /
+
+--reporting.sql
+
+-- Procedure rapport_projets_par_chercheur
+EXEC rapport_projets_par_chercheur(1);
+-- Fonction statistiques_equipements
+DECLARE
+    v_statistiques pkg_statistiques.t_statistiques_equipements;
+BEGIN
+    v_statistiques := pkg_statistiques.statistiques_equipements();
+
+    FOR i IN 1 .. v_statistiques.COUNT LOOP
+        DBMS_OUTPUT.PUT_LINE(v_statistiques(i).etat_equipement || ' = ' || v_statistiques(i).nb_equipement);
+    END LOOP;
+END;
+/
+-- Procedure rapport_activite_projets
+EXEC rapport_activite_projets;
+/
+-- Fonction budget_moyen_par_domaine()
+SELECT * FROM TABLE(budget_moyen_par_domaine());
+/
