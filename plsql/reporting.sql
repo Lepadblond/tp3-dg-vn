@@ -123,7 +123,18 @@ CREATE OR REPLACE PACKAGE BODY pkg_statistiques AS
             DBMS_OUTPUT.PUT_LINE('Erreur dans statistiques_equipements: '|| SQLERRM);
     END statistiques_equipements;
 END pkg_statistiques;
+/
+-- Fonction statistiques_equipements
+DECLARE
+    v_statistiques pkg_statistiques.t_statistiques_equipements;
+BEGIN
+    v_statistiques := pkg_statistiques.statistiques_equipements();
 
+    FOR i IN 1 .. v_statistiques.COUNT LOOP
+        DBMS_OUTPUT.PUT_LINE(v_statistiques(i).etat_equipement || ' = ' || v_statistiques(i).nb_equipement);
+    END LOOP;
+END;
+/
 -- ===========================================================
 -- PROCÉDURE : rapport_activite_projets()
 -- OBJECTIF   : Affiche le nombre d’expériences réalisées par projet et leur taux de réussite.
@@ -250,4 +261,7 @@ BEGIN
     CLOSE c_projet;
     RETURN v_table;
 END;
+/
+-- Fonction budget_moyen_par_domaine()
+SELECT * FROM TABLE(budget_moyen_par_domaine());
 /

@@ -1,3 +1,11 @@
+-- ===========================================================
+-- PROCÉDURE : planifier_experience()
+-- OBJECTIF   : Transaction securitaire pour plannifier experience
+-- EXTERNE : Appelle journaliser_action() avant le commit ainsi que lors d'une exception
+-- EXCEPTIONS : 
+--   - Statut invalide
+--   - Erreur d'affectation d'equipement
+-- ===========================================================
 CREATE OR REPLACE PROCEDURE planifier_experience (
     p_id_projet IN EXPERIENCE.id_projet%TYPE,
     p_titre_exp IN EXPERIENCE.titre_exp%TYPE,
@@ -56,6 +64,10 @@ EXCEPTION
 END planifier_experience;
 /
 -- 6B.Sécurité des données
+-- ===========================================================
+-- VUE : V_PROJETS_PUBLICS
+-- OBJECTIF   : Créez des vues de consultation réservées au rôle LECT_LAB 
+-- ===========================================================
 CREATE OR REPLACE VIEW V_PROJETS_PUBLICS AS
 SELECT id_projet, titre, domaine, budget, date_debut, date_fin, id_chercheur_resp
 FROM PROJET
@@ -63,6 +75,10 @@ WHERE date_fin IS NOT NULL
 AND date_fin <= SYSDATE;
 /
 
+-- ===========================================================
+-- VUE : V_RESULTATS_EXPERIENCE
+-- OBJECTIF   : Créez des vues de consultation réservées au rôle LECT_LAB 
+-- ===========================================================
 CREATE OR REPLACE VIEW V_RESULTATS_EXPERIENCE AS
 SELECT
     e.id_exp AS id_exp,
@@ -97,8 +113,11 @@ GROUP BY
     p.date_fin,
     p.date_debut
 /
--- Chiffrement des données sensibles
--- Hachage de Chercheur.Nom
+-- ===========================================================
+-- FONCTION : hash_nom
+-- OBJECTIF   : Chiffrement des données sensibles
+--              Hachage de Chercheur.Nom
+-- ===========================================================
 CREATE OR REPLACE FUNCTION hash_nom(p_nom IN VARCHAR2)
 RETURN VARCHAR2
 IS
@@ -183,11 +202,14 @@ GROUP BY
 
 
 -- 6B.Gestion des privileges
--- Accord des views
+-- ===========================================================
+-- GRANT, EXECUTE
+-- OBJECTIF   : Accorder l'access aux  views
+-- ===========================================================
 GRANT SELECT ON V_RESULTATS_EXPERIENCE_OFFUSQUEE TO LECT_LAB;
 GRANT SELECT ON V_PROJETS_PUBLICS                TO LECT_LAB;
 
--- Accord tous les fonctions de reporting sauf 
+-- Accord tous les fonctions de reporting
 GRANT EXECUTE ON rapport_projets_par_chercheur TO LECT_LAB;
 GRANT EXECUTE ON rapport_activite_projets TO LECT_LAB;
 GRANT EXECUTE ON statistiques_equipements TO LECT_LAB;
@@ -200,9 +222,10 @@ GRANT EXECUTE ON affecter_equipement TO GEST_LAB;
 GRANT EXECUTE ON planifier_experience TO GEST_LAB;
 GRANT EXECUTE ON journaliser_action TO GEST_LAB;
 
+-- ===========================================================
 -- 6B.Journalisation
--- Toutes les actions d’insertion/suppression doivent être inscrites dans
--- LOG_OPERATION.
+-- OBJECTIF   : Toutes les actions d’insertion/suppression doivent être inscrites dans LOG_OPERATION.
+-- ===========================================================
 CREATE OR REPLACE TRIGGER trg_log_experience
 AFTER INSERT OR DELETE ON EXPERIENCE
 FOR EACH ROW
@@ -214,10 +237,7 @@ BEGIN
 
     ELSIF DELETING THEN
         journaliser_action(
-            'EXPERIENCE',
-            'DELETE',
-            USER,
-            'Suppression de l''expérience ID=' || :OLD.id_exp
+            'EXPERIENCE', 'DELETE', USER, 'Suppression de l''expérience ID=' || :OLD.id_exp
         );
     END IF;
 END;
@@ -229,10 +249,7 @@ FOR EACH ROW
 BEGIN
     IF INSERTING THEN
         journaliser_action(
-            'PROJET',
-            'INSERT',
-            USER,
-            'Insertion du projet ID=' || :NEW.id_projet
+            'PROJET', 'INSERT', USER, 'Insertion du projet ID=' || :NEW.id_projet
         );
 
     ELSIF DELETING THEN
@@ -245,5 +262,3 @@ BEGIN
     END IF;
 END;
 /
-
-
